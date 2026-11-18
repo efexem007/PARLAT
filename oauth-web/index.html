@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Parlat Focus · Yapay Zekâ Bağlantı Onayı</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #050506;
+      color: #f4f4f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 18px;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #111214;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(164, 198, 57, 0.14);
+      color: #a4c639;
+      border: 1px solid rgba(164, 198, 57, 0.4);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      margin-bottom: 12px;
+      letter-spacing: 0.2px;
+    }
+    h1 { font-size: 21px; margin: 0 0 8px; font-weight: 700; }
+    p { font-size: 13.5px; color: #a1a1aa; margin: 0 0 18px; line-height: 1.5; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #d4d4d8;
+      margin: 12px 0 6px;
+    }
+    input, select {
+      width: 100%;
+      background: #1a1b1f;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 12px 13px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #a4c639;
+    }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      background: #a4c639;
+      color: #050506;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+    .alert {
+      display: none;
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.45;
+    }
+    .alert.show { display: block; }
+    .meta {
+      margin-top: 14px;
+      font-size: 11.5px;
+      color: #71717a;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Parlat Focus · OAuth 2.1 MCP</div>
+    <h1>Bağlantı Yetkilendirme</h1>
+    <p id="subtitle">
+      Yapay zekâ asistanınız Parlat Focus hesabınıza bulut üzerinden bağlanmak istiyor.
+      Uygulama hesabınızla giriş yapıp yetki seviyesini seçin.
+    </p>
+    <div id="errorBox" class="alert"></div>
+    <form id="authForm">
+      <label for="email">Parlat Focus E-posta Adresi</label>
+      <input id="email" name="email" type="email" required autocomplete="email" placeholder="mefes275@gmail.com" />
+
+      <label for="password">Şifre</label>
+      <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" />
+
+      <label for="tier">Yetki Seviyesi</label>
+      <select id="tier" name="tier">
+        <option value="full_access" selected>Tam Kontrol (İzinli tüm modülleri yönetir)</option>
+        <option value="read_write">Düzenleme (Okuma &amp; Yazma, silme onaylı)</option>
+        <option value="read_only">Salt Okunur (Yalnızca veri okuma)</option>
+      </select>
+
+      <button id="submitBtn" type="submit">Yetki Ver &amp; Bağlan</button>
+    </form>
+    <div id="metaInfo" class="meta"></div>
+  </div>
+
+  <script>
+    (function () {
+      var GATEWAY_AUTHORIZE = "https://mqgskhpqopxwjojnqbyn.supabase.co/functions/v1/ai-gateway/oauth/authorize";
+      var params = new URLSearchParams(window.location.search);
+      var clientId = params.get("client_id") || "";
+      var redirectUri = params.get("redirect_uri") || "";
+      var codeChallenge = params.get("code_challenge") || "";
+      var codeChallengeMethod = params.get("code_challenge_method") || (codeChallenge ? "S256" : "");
+      var state = params.get("state") || "";
+
+      var errBox = document.getElementById("errorBox");
+      var submitBtn = document.getElementById("submitBtn");
+      var form = document.getElementById("authForm");
+      var metaInfo = document.getElementById("metaInfo");
+
+      if (!redirectUri) {
+        errBox.textContent = "Eksik OAuth parametresi (redirect_uri). Lütfen bağlantıyı Gemini veya Claude üzerinden yeniden başlatın.";
+        errBox.classList.add("show");
+        submitBtn.disabled = true;
+      } else {
+        var clientLabel = clientId || "Yapay Zekâ İstemcisi";
+        metaInfo.textContent = "İstemci: " + clientLabel;
+      }
+
+      form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        errBox.classList.remove("show");
+        errBox.textContent = "";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Doğrulanıyor...";
+
+        try {
+          var body = new URLSearchParams();
+          body.set("client_id", clientId || "parlat-focus-oauth");
+          body.set("redirect_uri", redirectUri);
+          body.set("code_challenge", codeChallenge);
+          body.set("code_challenge_method", codeChallengeMethod);
+          body.set("state", state);
+          body.set("email", document.getElementById("email").value.trim());
+          body.set("password", document.getElementById("password").value);
+          body.set("tier", document.getElementById("tier").value);
+
+          var res = await fetch(GATEWAY_AUTHORIZE, {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+            },
+            body: body.toString()
+          });
+
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok || !data.redirect_to) {
+            throw new Error(data.error || "Giriş veya yetkilendirme başarısız oldu.");
+          }
+          window.location.replace(data.redirect_to);
+        } catch (err) {
+          errBox.textContent = err && err.message ? err.message : "Beklenmeyen bir hata oluştu.";
+          errBox.classList.add("show");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Yetki Ver & Bağlan";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

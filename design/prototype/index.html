@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parlat Focus — Android UI Prototipi & Tasarım Tahtası</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-studio: #090A0D;
+      --bg-canvas: #050506;
+      --bg-surface: #111214;
+      --bg-elevated: #1A1C1F;
+      --bg-glass: rgba(29, 32, 36, 0.72);
+      --border-subtle: #26292E;
+      --border-glass: rgba(255, 255, 255, 0.16);
+      --text-primary: #F8FAFC;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      --accent: #A4C639;
+      --accent-on: #050506;
+      --accent-2: #22C55E;
+      --danger: #EF4444;
+      --info: #3B82F6;
+      --warn: #F59E0B;
+      --shadow-glass: 0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+    [data-theme="light"] {
+      --bg-studio: #E2E8F0;
+      --bg-canvas: #F8FAFC;
+      --bg-surface: #FFFFFF;
+      --bg-elevated: #F1F5F9;
+      --bg-glass: rgba(255, 255, 255, 0.78);
+      --border-subtle: #E2E8F0;
+      --border-glass: rgba(15, 23, 42, 0.12);
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --accent: #2563EB;
+      --accent-on: #FFFFFF;
+      --accent-2: #3B82F6;
+      --danger: #DC2626;
+      --info: #0284C7;
+      --warn: #D97706;
+      --shadow-glass: 0 14px 34px rgba(15, 23, 42, 0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-studio);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    h1, h2, h3, .display-font { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+    .studio-bar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 24px;
+      background: rgba(10, 11, 14, 0.85);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #F8FAFC;
+    }
+    [data-theme="light"] .studio-bar {
+      background: rgba(255,255,255,0.88);
+      border-bottom: 1px solid #CBD5E1;
+      color: #0F172A;
+    }
+    .studio-brand { display: flex; align-items: center; gap: 10px; }
+    .brand-dot { width: 12px; height: 12px; border-radius: 99px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+    .studio-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .chip-btn {
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      padding: 7px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .chip-btn.active { background: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+    .chip-btn:hover { transform: translateY(-1px); }
+
+    /* Workspace Layout */
+    .workspace { padding: 24px; max-width: 1440px; margin: 0 auto; }
+    .proto-stage {
+      display: grid; grid-template-columns: 420px 1fr; gap: 28px; align-items: start;
+    }
+    @media (max-width: 980px) { .proto-stage { grid-template-columns: 1fr; justify-items: center; } }
+
+    /* Android Phone Shell */
+    .phone-shell {
+      width: 412px; height: 870px;
+      background: var(--bg-canvas);
+      border-radius: 38px;
+      border: 3px solid var(--border-subtle);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+      display: flex; flex-direction: column; overflow: hidden;
+      position: relative;
+      transition: background 0.3s ease;
+    }
+    .status-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 24px 6px; font-size: 12px; font-weight: 600; color: var(--text-primary);
+      flex-shrink: 0;
+    }
+    .screen-body {
+      flex: 1; overflow-y: auto; padding: 8px 18px 14px;
+      display: flex; flex-direction: column; gap: 12px;
+      scrollbar-width: none;
+    }
+    .screen-body::-webkit-scrollbar { display: none; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 18px 16px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      border: none; background: transparent; color: var(--text-secondary);
+      padding: 8px 14px; border-radius: 999px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .nav-btn.active { background: var(--accent); color: var(--accent-on); }
+
+    /* Shared UI Cards & Pills */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px; padding: 14px;
+    }
+    .glass-card {
+      background: var(--bg-glass);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--border-glass);
+      box-shadow: var(--shadow-glass);
+      border-radius: 24px;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border-subtle); background: var(--bg-surface); color: var(--text-primary);
+      cursor: pointer;
+    }
+    .pill.accent { background: var(--accent); color: var(--accent-on); border-color: var(--accent); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 700;
+    }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .muted { color: var(--text-secondary); font-size: 12px; }
+    .micro { color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* Focus Ring */
+    .focus-ring {
+      width: 226px; height: 226px; border-radius: 999px; margin: 4px auto;
+      border: 4px solid var(--accent);
+      background: radial-gradient(circle at center, rgba(164, 198, 57, 0.09), transparent 72%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; cursor: pointer; user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.25s ease;
+    }
+    [data-theme="light"] .focus-ring {
+      background: radial-gradient(circle at center, rgba(37, 99, 235, 0.08), transparent 72%);
+    }
+    .focus-ring:active { transform: scale(0.96); }
+    .timer-digits { font-size: 54px; font-weight: 800; letter-spacing: -0.02em; text-align: center; font-variant-numeric: tabular-nums; }
+
+    /* Liquid Glass 3-Horizon Folders */
+    .horizon-stack { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+    .horizon-folder {
+      padding: 18px; cursor: pointer;
+      transition: all 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .horizon-folder:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .progress-track { height: 6px; border-radius: 99px; background: var(--bg-elevated); overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; }
+    .peek-bar {
+      padding: 11px 16px; border-radius: 18px;
+      background: var(--bg-glass); backdrop-filter: blur(18px);
+      border: 1px solid var(--border-glass);
+      text-align: center; font-size: 12px; font-weight: 600; color: var(--text-primary);
+      cursor: pointer; margin-top: auto;
+    }
+
+    /* Johari 2x2 Grid */
+    .johari-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .johari-cell {
+      padding: 10px; border-radius: 12px; font-size: 11px; cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .johari-cell:hover { transform: scale(1.02); }
+
+    /* Week Scrubber at Bottom */
+    .week-strip {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 10px; border-radius: 18px;
+      background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+      margin-top: auto;
+    }
+    .day-chip {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 5px 8px; border-radius: 12px; cursor: pointer; font-size: 11px;
+    }
+    .day-chip.active { background: rgba(164, 198, 57, 0.2); color: var(--accent); font-weight: 700; }
+    [data-theme="light"] .day-chip.active { background: rgba(37, 99, 235, 0.14); }
+
+    /* Bottom Sheet Modal inside Phone */
+    .sheet-backdrop {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.58);
+      display: none; align-items: flex-end; z-index: 20;
+    }
+    .sheet-backdrop.open { display: flex; }
+    .sheet-panel {
+      width: 100%; max-height: 78%; overflow-y: auto;
+      background: var(--bg-surface); border-top: 1px solid var(--border-glass);
+      border-radius: 28px 28px 0 0; padding: 16px 20px 24px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .sheet-handle { width: 40px; height: 4px; border-radius: 99px; background: var(--text-muted); margin: 0 auto 4px; }
+
+    /* Inspector / Philosophy Panel beside Phone */
+    .spec-panel { display: flex; flex-direction: column; gap: 16px; }
+    .spec-box {
+      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      border-radius: 20px; padding: 20px;
+    }
+    .spec-box h3 { font-size: 16px; margin-bottom: 8px; }
+    .spec-list { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+    .spec-list li strong { color: var(--text-primary); }
+
+    /* Figma-like Multi-Screen Canvas Board Mode */
+    .board-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 24px; margin-top: 16px;
+    }
+    .artboard {
+      background: var(--bg-surface); border: 1px solid var(--border-subtle);
+      border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .artboard img {
+      width: 100%; border-radius: 14px; border: 1px solid var(--border-subtle);
+      background: #050506; display: block;
+    }
+    .hidden { display: none !important; }
+
+    /* Live pulse animation for Telemetry */
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.35); }
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 99px; background: #22C55E; animation: pulseDot 1.6s infinite; }
+
+    /* Voice Waveform */
+    .wave { display: flex; align-items: center; justify-content: center; gap: 5px; height: 44px; }
+    .wave span { width: 5px; border-radius: 99px; background: var(--accent); display: block; }
+  </style>
+</head>
+<body>
+  <header class="studio-bar">
+    <div class="studio-brand">
+      <div class="brand-dot"></div>
+      <div>
+        <strong class="display-font" style="font-size:15px;">PARLAT FOCUS · Android Tasarım Stüdyosu</strong>
+        <div style="font-size:11px; color:var(--text-secondary);">Engross Video UX + Parlat! 40 Metot + Liquid Glass + AI Bağlantı Merkezi</div>
+      </div>
+    </div>
+    <div class="studio-controls">
+      <button class="chip-btn active" id="btnModeProto" onclick="switchStudioMode('proto')">📱 Etkileşimli Prototip</button>
+      <button class="chip-btn" id="btnModeBoard" onclick="switchStudioMode('board')">🗂️ Tüm Bölüm Görselleri (Figma Tahtası)</button>
+      <button class="chip-btn" id="btnTheme" onclick="toggleTheme()">🌙 Koyu Tema (Değiştir)</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- INTERACTIVE PROTOTYPE VIEW -->
+    <section id="protoView" class="proto-stage">
+      <div class="phone-shell" id="phoneShell">
+        <div class="status-bar">
+          <span>10:26</span>
+          <span>5G · %75</span>
+        </div>
+
+        <div class="screen-body" id="screenBody"></div>
+
+        <!-- Bottom Nav (5 Android Destinations) -->
+        <nav class="bottom-nav">
+          <button class="nav-btn" data-tab="calendar" onclick="goTab('calendar')" title="Planlama & Johari">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="2"/><path d="M8 2v4M16 2v4M3 9h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="nav-btn" data-tab="goals" onclick="goTab('goals')" title="Hedefler (Liquid Glass Vadeler)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="nav-btn active" data-tab="focus" onclick="goTab('focus')" title="Odak & Dikte">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="13" r="8" stroke="currentColor" stroke-width="2"/><path d="M12 9v4l2.5 1.5M9 2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="nav-btn" data-tab="stats" onclick="goTab('stats')" title="İstatistikler & Canlı Analiz">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/><path d="M8 16v-4M12 16V8M16 16v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="nav-btn" data-tab="settings" onclick="goTab('settings')" title="Ayarlar & AI Merkezi">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+        </nav>
+
+        <!-- Bottom Sheet Backdrop -->
+        <div class="sheet-backdrop" id="sheetBackdrop" onclick="if(event.target===this) closeSheet()">
+          <div class="sheet-panel" id="sheetContent"></div>
+        </div>
+      </div>
+
+      <!-- Right Side Interactive Spec & Parlat Philosophy Guide -->
+      <aside class="spec-panel">
+        <div class="spec-box">
+          <div class="micro" style="color:var(--accent); margin-bottom:4px;">AKTİF EKRAN SPESİFİKASYONU</div>
+          <h3 id="specTitle">01 · Odak & Zamanlayıcı + Sesli Dikte</h3>
+          <ul class="spec-list" id="specPoints"></ul>
+        </div>
+        <div class="spec-box">
+          <div class="micro" style="color:var(--info); margin-bottom:4px;">HIZLI GEZİNTİ (TÜM MODÜLLERİ TEST ET)</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+            <button class="pill" onclick="goTab('focus')">⏱️ Odak & Dikte</button>
+            <button class="pill" onclick="goTab('focus'); openSheet('timer')">🎛️ Zamanlayıcı Ayarı</button>
+            <button class="pill" onclick="goTab('focus'); openSheet('voice')">🎙️ Türkçe Sesli Dikte</button>
+            <button class="pill" onclick="goTab('calendar')">📅 Takvim + Johari</button>
+            <button class="pill" onclick="goTab('goals')">🫧 Liquid Glass Vadeler</button>
+            <button class="pill" onclick="goTab('stats', 'analysis')">📈 Canlı Telemetri</button>
+            <button class="pill" onclick="goTab('settings', 'ai')">🔐 AI Bağlantı Merkezi</button>
+          </div>
+        </div>
+        <div class="spec-box">
+          <div class="micro" style="color:var(--accent-2); margin-bottom:4px;">PARLAT! KİTABI → UYGULAMA FELSEFESİ</div>
+          <ul class="spec-list">
+            <li><strong>Ch. 2 Johari Penceresi:</strong> Takvim ekranında Kör Alan & Geri Bildirim takibi.</li>
+            <li><strong>Ch. 3 Kasıtlı Değişim (Fil & Sürücü):</strong> Kısa/Orta/Uzun Vade + İdeal Benlik.</li>
+            <li><strong>Ch. 8 Eisenhower & Özgür Ruh:</strong> Acil/Önemli ayrımı ve günlük çekme mekanizması.</li>
+            <li><strong>Ch. 15 Akış (Flow C Alanı):</strong> Odak zamanlayıcıda zorluk/beceri dengesi.</li>
+            <li><strong>Ch. 17 Denge Karnesi & Ch. 25 Pareto:</strong> İstatistiklerde 4 boyut ve %20 kaldıraç.</li>
+            <li><strong>Ch. 23 Kaizen & Ch. 26 OODA:</strong> Sesli dikte & otomasyonlarla sürekli uyarlama.</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <!-- FIGMA-LIKE MULTI-ARTBOARD VIEW -->
+    <section id="boardView" class="hidden">
+      <div class="spec-box" style="margin-bottom:20px;">
+        <div class="row-between">
+          <div>
+            <div class="micro" style="color:var(--accent);">FİGMA DIŞA AKTARILAN BÖLÜM GÖRSELLERİ</div>
+            <h2 style="font-size:20px; margin-top:4px;">Her Bölüm İçin Geliştirmeye Hazır Android Ekranları</h2>
+          </div>
+          <a href="https://www.figma.com/design/j9xEXLQbeWQge5Ib6s35tN" target="_blank" class="pill accent" style="text-decoration:none;">Figma Dosyasını Aç ↗</a>
+        </div>
+      </div>
+      <div class="board-grid" id="boardGrid"></div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      tab: 'focus',
+      calTop: 'events',
+      selectedDay: 18,
+      expandedHorizon: null,
+      horizonTab: 'Bugün',
+      statsSub: 'analysis',
+      statsPeriod: 'Haftalık',
+      settingsSub: 'ai',
+      selectedTier: 'Özel İzinler',
+      distractions: 0,
+      running: false,
+      seconds: 45 * 60,
+      selectedTag: 'Eğitim',
+      studyGoalH: 8,
+      policies: { plan: 'Otomatik Uygula', del: 'Önce Onay İste', db: 'Hiçbir Zaman İzin Verme' }
+    };
+
+    const specs = {
+      focus: {
+        title: '01 · Odak Zamanlayıcı + Derin Odak + Türkçe Sesli Dikte',
+        points: [
+          '<strong>Engross Odak Çekirdeği:</strong> Etiket seçici, Derin Odak modu, 0/8h günlük hedef, büyük dikkat dağıtıcı halkası ("Dikkatin dağıldığında bana vur!").',
+          '<strong>Parlat Akış (Ch. 15):</strong> Zorluk ve beceri dengesini ölçen canlı "C Alanı" göstergesi.',
+          '<strong>Türkçe Sesli Dikte (Modül 05):</strong> Tek dokunuşla sesli komut; örn. yorgunlukta sporu 45→20 dk indirip İngilizceyi korur.'
+        ]
+      },
+      calendar: {
+        title: '02 · Akıllı Planlama (Üst Etkinlik/Görev + Alt Tarih Şeridi + Johari)',
+        points: [
+          '<strong>Video Revizyonu #1:</strong> Etkinlikler / Görevler sekmesi ÜSTTE, ileri-geri akan haftalık tarih şeridi ALTTA.',
+          '<strong>Google Takvim Oto-Entegrasyon:</strong> Oluşturulan her odak bloğu ve görev iki yönlü Google Takvim ile senkronize.',
+          '<strong>Video Revizyonu #2 (Parlat Johari Penceresi):</strong> Açık, Gizli, Kör ve Bilinmeyen Alan kartlarıyla kişisel eksiklik takibi.'
+        ]
+      },
+      goals: {
+        title: '03 · Hedefler & Alışkanlıklar (Liquid Glass 3 Vade Klasörü)',
+        points: [
+          '<strong>Video Revizyonu #3:</strong> Bugün/Yarın/Gelen Kutusu üst seviyeden kaldırılıp 3 akışkan klasör içine taşındı: <strong>Kısa Vade, Orta Vade, Uzun Vade</strong>.',
+          '<strong>Apple Liquid Glass Etkileşimi:</strong> Klasöre tıklandığında tam ekrana akışkan şekilde büyür; alttaki ince cam çubuğa dokununca 3 klasörlü görünüme döner.',
+          '<strong>Parlat Entegrasyonu:</strong> Eisenhower Matrisi (Q1–Q4), SMART hedefler ve Kasıtlı Değişim (Fil & Sürücü).'
+        ]
+      },
+      stats: {
+        title: '04 · İstatistikler, Denge Karnesi & Canlı Renk Spektrumlu Telemetri',
+        points: [
+          '<strong>Video Revizyonu #4a:</strong> Geçmiş sekmesindeki ileri/geri tarih seçici alt başparmak alanına taşındı.',
+          '<strong>Video Revizyonu #4b:</strong> Odaklanma Analizi canlı izleniyormuş gibi dinamik renk spektrumuyla çizilir: Düşük = Kırmızı, Orta = Mavi, Yüksek Akış = Yeşil.',
+          '<strong>Parlat Ch. 17 & 25:</strong> 4 Boyutlu Denge Karnesi ve %20/%80 Pareto Odak Kaldıracı.'
+        ]
+      },
+      settings: {
+        title: '05 · Ayarlar & GitHub PAT Modeli AI Bağlantı Yönetim Merkezi',
+        points: [
+          '<strong>REST API + MCP Sunucusu:</strong> ChatGPT Eklentiler, Claude Özel Bağdaştırıcı ve Gemini REST Bağlayıcı için tek merkezden token & uç nokta.',
+          '<strong>4 Yetki Seviyesi + 10 Kaynak Matrisi:</strong> Salt Okunur, Düzenleme, Tam Kontrol (izinli modüllerle sınırlı) ve Özel İzinler.',
+          '<strong>İşlem Onay Merkezi & Audit Log:</strong> Her AI eylemi kaydedilir; hassas işlemler onay bekler.'
+        ]
+      }
+    };
+
+    function goTab(tab, sub) {
+      state.tab = tab;
+      if (tab === 'stats' && sub) state.statsSub = sub;
+      if (tab === 'settings' && sub) state.settingsSub = sub;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      render();
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      document.getElementById('btnTheme').textContent = next === 'dark' ? '🌙 Koyu Tema (Değiştir)' : '☀️ Açık Tema (Değiştir)';
+    }
+
+    function switchStudioMode(mode) {
+      document.getElementById('protoView').classList.toggle('hidden', mode !== 'proto');
+      document.getElementById('boardView').classList.toggle('hidden', mode !== 'board');
+      document.getElementById('btnModeProto').classList.toggle('active', mode === 'proto');
+      document.getElementById('btnModeBoard').classList.toggle('active', mode === 'board');
+    }
+
+    function fmtTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    let timerHandle = null;
+    function toggleTimer() {
+      state.running = !state.running;
+      if (state.running) {
+        timerHandle = setInterval(() => {
+          if (state.seconds > 0) state.seconds--;
+          const el = document.getElementById('timerDisplay');
+          if (el) el.textContent = fmtTime(state.seconds);
+        }, 1000);
+      } else {
+        clearInterval(timerHandle);
+      }
+      render();
+    }
+
+    function render() {
+      const body = document.getElementById('screenBody');
+      const sp = specs[state.tab];
+      document.getElementById('specTitle').textContent = sp.title;
+      document.getElementById('specPoints').innerHTML = sp.points.map(p => `<li>${p}</li>`).join('');
+
+      if (state.tab === 'focus') {
+        body.innerHTML = `
+          <div class="row-between">
+            <button class="pill" onclick="openSheet('tags')">🏷️ ${state.selectedTag}</button>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="pill" onclick="openSheet('voice')" style="border-color:var(--accent-2); color:var(--accent-2);">🎙️ Dikte</button>
+              <button class="pill" onclick="openSheet('deep')">◎</button>
+              <button class="pill" onclick="openSheet('goal')">3.5 / ${state.studyGoalH}h</button>
+            </div>
+          </div>
+          <div class="glass-card" style="padding:10px 14px; border-radius:16px; display:flex; align-items:center; gap:8px;">
+            <span class="live-dot"></span>
+            <span style="font-size:12px;"><strong>Akış C Alanı:</strong> Zorluk & beceri dengeli · %78 günlük başarı</span>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;">
+            <div class="muted">Dikkat dağıtıcıları alt et!</div>
+            <div class="timer-digits display-font" id="timerDisplay">${fmtTime(state.seconds)}</div>
+            <div class="focus-ring" onclick="state.distractions++; render()">
+              <div style="font-size:14px; font-weight:600; padding:0 24px;">Dikkatin dağıldığında bana vur!</div>
+              <div class="muted" style="margin-top:8px;">Alt edilen dikkat: <strong>${state.distractions}</strong></div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="pill accent" onclick="openSheet('timer')">⏱️ Zamanlayıcı</button>
+              <button class="pill" onclick="toggleTimer()">${state.running ? '⏸ Duraklat' : '▶ Kronometre / Başla'}</button>
+            </div>
+          </div>
+          <div class="card" style="padding:12px;">
+            <div class="micro" style="color:var(--accent);">PARLAT · FIL & SÜRÜCÜ ÖNERİSİ</div>
+            <div class="muted" style="margin-top:4px;">09–12 en verimli dilimin. 20 dk mikro adımla başlarsan direnci kırarsın.</div>
+          </div>
+        `;
+      } else if (state.tab === 'calendar') {
+        body.innerHTML = `
+          <div class="row-between">
+            <h2 style="font-size:22px;">Kasım 2026</h2>
+            <span class="badge" style="background:rgba(34,197,94,0.16); color:var(--accent-2);">● Google Takvim Oto</span>
+          </div>
+          <div style="display:flex; gap:18px; border-bottom:1px solid var(--border-subtle); padding-bottom:6px;">
+            <span onclick="state.calTop='events'; render()" style="cursor:pointer; font-weight:700; color:${state.calTop==='events'?'var(--accent)':'var(--text-secondary)'}; border-bottom:${state.calTop==='events'?'2px solid var(--accent)':'none'}; padding-bottom:4px;">Etkinlikler</span>
+            <span onclick="state.calTop='tasks'; render()" style="cursor:pointer; font-weight:700; color:${state.calTop==='tasks'?'var(--accent)':'var(--text-secondary)'}; border-bottom:${state.calTop==='tasks'?'2px solid var(--accent)':'none'}; padding-bottom:4px;">Görevler</span>
+          </div>
+          <div class="card">
+            <div class="row-between" style="margin-bottom:8px;">
+              <span class="micro" style="color:var(--accent);">PARLAT · JOHARİ PENCERESİ (EKSİKLİK TAKİBİ)</span>
+              <span style="font-size:11px; color:var(--info); font-weight:600; cursor:pointer;" onclick="openSheet('johari')">Detay →</span>
+            </div>
+            <div class="johari-grid">
+              <div class="johari-cell" style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.35);">
+                <strong style="color:var(--accent-2);">Açık Alan</strong><div class="muted" style="font-size:11px;">Analitik, istikrarlı</div>
+              </div>
+              <div class="johari-cell" onclick="openSheet('johari')" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35);">
+                <strong style="color:var(--danger);">Kör Alan (2 Yeni)</strong><div class="muted" style="font-size:11px;">15:00 sonrası telefon</div>
+              </div>
+              <div class="johari-cell" style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35);">
+                <strong style="color:var(--warn);">Gizli Alan</strong><div class="muted" style="font-size:11px;">Yorgunluk stresi</div>
+              </div>
+              <div class="johari-cell" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.35);">
+                <strong style="color:var(--info);">Bilinmeyen Alan</strong><div class="muted" style="font-size:11px;">Liderlik potansiyeli</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+            ${[
+              ['09:00 – 10:30', 'İngilizce Konuşma Pratiği', 'Eğitim · GCal Senkron', 'var(--accent)'],
+              ['14:00 – 14:20', 'Spor (AI Hafifletti: 45→20 dk)', 'Spor · Otomasyon', 'var(--accent-2)'],
+              ['20:00 – 20:30', 'Johari Geri Bildirim & Günlük', 'Gelişim · Rutin', 'var(--info)']
+            ].map(([t, title, meta, col]) => `
+              <div class="card" style="padding:11px 14px; display:flex; align-items:center; gap:12px;">
+                <div style="width:4px; height:32px; border-radius:99px; background:${col};"></div>
+                <div><div style="font-size:13px; font-weight:600;">${title}</div><div class="muted" style="font-size:11px;">${t} · ${meta}</div></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="week-strip">
+            ${[['Paz',15],['Pzt',16],['Sal',17],['Çar',18],['Per',19],['Cum',20],['Cmt',21]].map(([d,n]) => `
+              <div class="day-chip ${state.selectedDay===n?'active':''}" onclick="state.selectedDay=${n}; render()">
+                <span style="font-size:10px;">${d}</span><strong>${n}</strong>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (state.tab === 'goals') {
+        if (!state.expandedHorizon) {
+          body.innerHTML = `
+            <div class="row-between">
+              <h2 style="font-size:22px;">Hedefler & Görevler</h2>
+              <span class="badge" style="background:rgba(164,198,57,0.18); color:var(--accent);">Eisenhower + SMART</span>
+            </div>
+            <div class="muted">Liquid Glass klasörüne dokunup içine girin</div>
+            <div class="horizon-stack">
+              ${[
+                ['short', 'Kısa Vade', '5 Görev · %68', 'Bugün, Yarın, Gelen Kutusu · Acil/Önemli & Günlük Rutinler', 68, 'var(--accent)'],
+                ['mid', 'Orta Vade', '3 Hedef · %45', '30–90 Gün SMART Hedefler · Kaizen & İngilizce B2 Sprint', 45, 'var(--info)'],
+                ['long', 'Uzun Vade', '2 Vizyon · %22', '1–5 Yıl BHAG Hedefleri · Kasıtlı Değişim: İdeal Benlik', 22, 'var(--accent-2)']
+              ].map(([id, title, badge, sub, pct, col]) => `
+                <div class="glass-card horizon-folder" onclick="state.expandedHorizon='${id}'; render()">
+                  <div class="row-between">
+                    <h3 style="font-size:19px;">${title}</h3>
+                    <span class="badge" style="background:rgba(164,198,57,0.16); color:${col};">${badge}</span>
+                  </div>
+                  <div class="muted">${sub}</div>
+                  <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${col};"></div></div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          const mapTitle = { short: 'Kısa Vade', mid: 'Orta Vade', long: 'Uzun Vade' }[state.expandedHorizon];
+          body.innerHTML = `
+            <div class="glass-card" style="padding:16px; flex:1; display:flex; flex-direction:column; gap:12px; border-color:var(--accent);">
+              <div class="row-between">
+                <h2 style="font-size:21px;">${mapTitle}</h2>
+                <span class="badge" style="background:rgba(164,198,57,0.18); color:var(--accent);">Akışkan Klasör Açık</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                ${['Bugün', 'Yarın', 'Gelen kutusu'].map(t => `
+                  <button class="pill ${state.horizonTab===t?'accent':''}" onclick="state.horizonTab='${t}'; render()">${t}</button>
+                `).join('')}
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+                ${[
+                  ['İngilizce Konuşma (30 dk)', 'Sabah Rutini · 14 Gün Seri', 'Q2 Önemli', 'var(--accent-2)', true],
+                  ['Gelişim Analizi Kontrolü', `${state.horizonTab} · Eisenhower Öncelik`, 'Q1 Acil', 'var(--danger)', false],
+                  ['Kitap: Parlat Bölüm 24 Notları', 'Kaizen +1 Küçük Adım', 'Q2 Önemli', 'var(--info)', false],
+                  ['Akşam Tefekkür & Dikte', '20 dk · Seri Korundu', 'Alışkanlık', 'var(--accent)', false]
+                ].map(([t, meta, q, col, done]) => `
+                  <div class="card" style="padding:11px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div>
+                      <div style="font-size:13px; font-weight:600; ${done?'text-decoration:line-through; opacity:0.6;':''}">${t}</div>
+                      <div class="muted" style="font-size:11px;">${meta}</div>
+                    </div>
+                    <span class="badge" style="background:rgba(255,255,255,0.06); color:${col}; border:1px solid ${col};">${q}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="peek-bar" onclick="state.expandedHorizon=null; render()">▾ Tüm Vadeler (Kısa / Orta / Uzun Klasörüne Dön)</div>
+          `;
+        }
+      } else if (state.tab === 'stats') {
+        body.innerHTML = `
+          <div class="row-between">
+            <h2 style="font-size:22px;">İstatistikler</h2>
+            <span class="badge" style="background:rgba(34,197,94,0.15); color:var(--accent-2);"><span class="live-dot"></span> CANLI</span>
+          </div>
+          <div style="display:flex; gap:12px; font-size:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:6px;">
+            ${[['history','Geçmiş'],['study','Çalışma İstatistikleri'],['analysis','Odaklanma Analizi']].map(([id,lb]) => `
+              <span onclick="state.statsSub='${id}'; render()" style="cursor:pointer; font-weight:${state.statsSub===id?700:500}; color:${state.statsSub===id?'var(--accent)':'var(--text-secondary)'};">${lb}</span>
+            `).join('')}
+          </div>
+          ${state.statsSub === 'analysis' ? `
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+              <div class="card" style="padding:10px; text-align:center;"><strong style="font-size:17px; color:var(--accent-2);">33</strong><div class="muted" style="font-size:10px;">Alt Edilen Dikkat</div></div>
+              <div class="card" style="padding:10px; text-align:center;"><strong style="font-size:17px; color:var(--info);">09–12</strong><div class="muted" style="font-size:10px;">Zirve Periyot</div></div>
+              <div class="card" style="padding:10px; text-align:center;"><strong style="font-size:17px; color:var(--accent);">226 dk</strong><div class="muted" style="font-size:10px;">En İyi Akış</div></div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px; font-weight:700;">Canlı Yoğunluk Spektrumu</div>
+              <div class="muted" style="font-size:10px; margin-bottom:8px;">Kırmızı: Düşük · Mavi: Orta · Yeşil: Yüksek Akış</div>
+              <svg width="100%" height="130" viewBox="0 0 340 130">
+                <defs><linearGradient id="liveG" x1="0" y1="0" x2="340" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#EF4444"/><stop offset="35%" stop-color="#3B82F6"/><stop offset="75%" stop-color="#22C55E"/><stop offset="100%" stop-color="#A4C639"/>
+                </linearGradient></defs>
+                <line x1="0" y1="35" x2="340" y2="35" stroke="var(--border-subtle)" stroke-dasharray="4 4"/>
+                <line x1="0" y1="80" x2="340" y2="80" stroke="var(--border-subtle)" stroke-dasharray="4 4"/>
+                <path d="M10 105 C50 100, 75 76, 115 62 C155 48, 185 55, 225 28 C265 10, 295 18, 330 14" fill="none" stroke="url(#liveG)" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="10" cy="105" r="5" fill="#EF4444"/><circle cx="115" cy="62" r="5" fill="#3B82F6"/><circle cx="225" cy="28" r="5" fill="#22C55E"/><circle cx="330" cy="14" r="6" fill="#A4C639"/>
+              </svg>
+            </div>
+            <div class="card">
+              <div class="micro" style="color:var(--accent);">SON 10 OTURUMDA KESİNTİSİZ ODAK</div>
+              <div style="display:flex; align-items:flex-end; justify-content:space-between; height:76px; margin-top:10px; gap:6px;">
+                ${[[24,'#EF4444'],[32,'#EF4444'],[48,'#3B82F6'],[54,'#3B82F6'],[28,'#EF4444'],[70,'#22C55E'],[76,'#22C55E'],[56,'#3B82F6'],[76,'#A4C639'],[68,'#22C55E']].map(([h,c]) => `
+                  <div style="flex:1; height:${h}px; background:${c}; border-radius:6px;"></div>
+                `).join('')}
+              </div>
+              <div class="muted" style="margin-top:8px; font-size:11px;">Pareto %20 Kaldıracı: Sabah 09–12 oturumları toplam çıktının %76'sını üretti.</div>
+            </div>
+          ` : state.statsSub === 'study' ? `
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px;">
+              <div class="card" style="padding:8px; text-align:center;"><strong>17</strong><div class="muted" style="font-size:10px;">Oturum</div></div>
+              <div class="card" style="padding:8px; text-align:center;"><strong style="color:var(--accent);">18s 4d</strong><div class="muted" style="font-size:10px;">Toplam</div></div>
+              <div class="card" style="padding:8px; text-align:center;"><strong style="color:var(--info);">2s 34d</strong><div class="muted" style="font-size:10px;">Ort.</div></div>
+              <div class="card" style="padding:8px; text-align:center;"><strong style="color:var(--accent-2);">9</strong><div class="muted" style="font-size:10px;">Görev</div></div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px; font-weight:700;">Haftalık Hedef & Pareto %80 Etki</div>
+              <div style="display:flex; align-items:flex-end; justify-content:space-between; height:96px; margin-top:12px; gap:8px;">
+                ${[['Pzt',28,'#EF4444'],['Sal',74,'#22C55E'],['Çar',52,'#3B82F6'],['Per',46,'#3B82F6'],['Cum',86,'#22C55E'],['Cmt',92,'#A4C639'],['Paz',60,'#3B82F6']].map(([d,h,c]) => `
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;">
+                    <div style="width:100%; height:${h}px; background:${c}; border-radius:8px;"></div>
+                    <span class="muted" style="font-size:10px;">${d}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="card">
+              <div style="font-size:13px; font-weight:700; margin-bottom:8px;">Parlat · Denge Karnesi (4 Boyut)</div>
+              ${[['Üretkenlik & Odak',82,'var(--accent)'],['Öğrenme & Dil',91,'var(--accent-2)'],['Alışkanlık Serileri',68,'var(--info)'],['Geri Bildirim & İlişkiler',74,'var(--warn)']].map(([n,p,c]) => `
+                <div style="margin-bottom:8px;">
+                  <div class="row-between" style="font-size:11px;"><span>${n}</span><strong>%${p}</strong></div>
+                  <div class="progress-track" style="margin-top:4px;"><div class="progress-fill" style="width:${p}%; background:${c};"></div></div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
+              ${[['08:30','Eğitim','68 dk','0 dikkat'],['17:47','Etiketsiz','197 dk','0 dikkat'],['20:15','Kişisel Gelişim','45 dk','1 dikkat']].map(([tm,tag,dur,d]) => `
+                <div class="card row-between" style="padding:12px;">
+                  <div><strong>${tag}</strong><div class="muted">${tm} · ${d}</div></div>
+                  <strong style="color:var(--accent);">${dur}</strong>
+                </div>
+              `).join('')}
+            </div>
+          `}
+          <div class="week-strip" style="justify-content:space-between; padding:10px 16px;">
+            <strong style="color:var(--accent); cursor:pointer;">‹</strong>
+            <strong style="font-size:12px;">Bu Hafta · 16–22 Kasım 2026</strong>
+            <strong style="color:var(--accent); cursor:pointer;">›</strong>
+          </div>
+        `;
+      } else if (state.tab === 'settings') {
+        body.innerHTML = `
+          <div class="row-between">
+            <h2 style="font-size:21px;">${state.settingsSub === 'ai' ? 'AI Bağlantı Merkezi' : 'Ayarlar'}</h2>
+            <div style="display:flex; gap:6px;">
+              <button class="pill ${state.settingsSub==='general'?'accent':''}" onclick="state.settingsSub='general'; render()">Genel</button>
+              <button class="pill ${state.settingsSub==='ai'?'accent':''}" onclick="state.settingsSub='ai'; render()">AI Merkezi</button>
+            </div>
+          </div>
+          ${state.settingsSub === 'general' ? `
+            <div class="card" style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <div class="row-between"><span>Tema Modu (Koyu / Açık)</span><button class="pill" onclick="toggleTheme()">Değiştir</button></div>
+              <div class="row-between"><span>Uygulama Dili</span><strong>Türkçe</strong></div>
+              <div class="row-between"><span>Google Takvim Oto-Senkron</span><strong style="color:var(--accent-2);">Aktif</strong></div>
+              <div class="row-between"><span>Varsayılan Çalışma Hedefi</span><strong>8 Saat</strong></div>
+            </div>
+            <div class="card" style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <div class="micro" style="color:var(--accent);">ZAMANLAYICI & ODAK</div>
+              <div class="row-between"><span>Sonraki oturum otomatik başlasın</span><strong style="color:var(--accent);">Açık</strong></div>
+              <div class="row-between"><span>Mola otomatik başlasın</span><strong style="color:var(--accent);">Açık</strong></div>
+              <div class="row-between"><span>Beyaz Gürültü</span><strong>Yağmur</strong></div>
+            </div>
+            <button class="pill accent" style="justify-content:center; padding:12px;" onclick="state.settingsSub='ai'; render()">Yapay Zekâ Bağlantılarını Yönet →</button>
+          ` : `
+          <div class="card">
+            <div class="row-between"><strong>Uygulama API Key</strong><span class="badge" style="background:rgba(34,197,94,0.16); color:var(--accent-2);">Aktif</span></div>
+            <div style="font-family:monospace; font-size:13px; color:var(--accent); margin:8px 0;">sk_app_••••••••••••••••</div>
+            <div style="display:flex; gap:8px;">
+              <button class="pill" onclick="alert('Yeni token tek seferlik gösterildi: sk_app_9f4k... (Sunucuda hashlenerek saklanır)')">Anahtarı değiştir</button>
+              <button class="pill" style="color:var(--danger);">İptal et</button>
+            </div>
+          </div>
+          <div class="micro">Bağlı Yapay Zekâlar (MCP & REST)</div>
+          ${[
+            ['ChatGPT · Custom GPT Action', 'Salt okunur · Hedef & İstatistik', 'var(--info)'],
+            ['Claude · Özel Bağdaştırıcı (MCP)', 'Tam kontrol (İzinli modüller)', 'var(--accent)'],
+            ['Gemini · REST Bağlayıcı', 'Özel izinler · Plan & Analiz', 'var(--accent-2)']
+          ].map(([n, d, c]) => `
+            <div class="card" style="padding:11px 14px; cursor:pointer;" onclick="openSheet('aiPerms')">
+              <div class="row-between"><strong style="font-size:13px;">${n}</strong><span class="badge" style="background:rgba(34,197,94,0.14); color:${c};">Aktif</span></div>
+              <div class="muted" style="margin-top:3px;">${d} · Yetkileri düzenle →</div>
+            </div>
+          `).join('')}
+          <button class="pill accent" style="justify-content:center; padding:12px;" onclick="openSheet('aiPerms')">+ Yeni bağlantı oluştur & Yetki Matrisi</button>
+          <div class="card" style="padding:11px 14px;">
+            <div class="micro" style="color:var(--accent);">İŞLEM ONAY MERKEZİ</div>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:11px;">
+              <div class="row-between"><span>Günlük Plan Değiştirme</span><strong style="color:var(--accent-2);">Otomatik Uygula</strong></div>
+              <div class="row-between"><span>Hedef Silme (Hassas)</span><strong style="color:var(--warn);">Önce Onay İste</strong></div>
+              <div class="row-between"><span>Yönetici / Ham DB Erişimi</span><strong style="color:var(--danger);">Hiçbir Zaman İzin Verme</strong></div>
+            </div>
+          </div>
+          `}
+        `;
+      }
+    }
+
+    function openSheet(type) {
+      const bd = document.getElementById('sheetBackdrop');
+      const sc = document.getElementById('sheetContent');
+      if (type === 'timer') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div>
+          <h3>Zamanlayıcı Kurulumu</h3>
+          <div class="card row-between"><span>Çalışma Süresi</span><strong>25 · 35 · <span style="color:var(--accent); font-size:18px;">45</span> · 50 dk</strong></div>
+          <div class="card row-between"><span>Mola</span><strong>5 · <span style="color:var(--accent); font-size:18px;">10</span> · 15 dk</strong></div>
+          <div class="card row-between"><span>Oturumlar</span><strong>4 · 5 · <span style="color:var(--accent); font-size:18px;">6</span> · 8 Tur</strong></div>
+          <button class="pill accent" style="justify-content:center; padding:13px;" onclick="state.seconds=45*60; closeSheet(); toggleTimer()">Başla (Bitiş ~15:46)</button>
+        `;
+      } else if (type === 'voice') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div>
+          <div class="row-between"><h3>Türkçe Sesli Dikte</h3><span class="badge" style="background:rgba(34,197,94,0.16); color:var(--accent-2);">TR Noktalama</span></div>
+          <div class="card">
+            <div class="wave"><span style="height:14px"></span><span style="height:30px"></span><span style="height:40px"></span><span style="height:22px"></span><span style="height:38px"></span><span style="height:18px"></span></div>
+            <p style="font-size:13px; margin-top:8px;">“Bugün kendimi biraz yorgun hissediyorum. Yarınki programımı hafiflet ama İngilizce çalışmamı iptal etme.”</p>
+          </div>
+          <div class="card" style="border-color:var(--accent);">
+            <div class="micro" style="color:var(--accent);">AI NİYET ÇIKARIMI</div>
+            <div class="muted" style="margin-top:4px;">• Spor: 45 dk → 20 dk<br/>• İngilizce Çalışma: Korundu (45 dk)<br/>• Duygu Kaydı: Yorgun</div>
+          </div>
+          <button class="pill accent" style="justify-content:center; padding:12px;" onclick="closeSheet()">Onayla & Takvime İşle</button>
+        `;
+      } else if (type === 'tags') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div><h3>Etiket Seç</h3>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            ${['Etiketsiz','Spor','Eğitim','İş','Sosyal','Okul','Kişisel Gelişim','DİKKATSİZ & BOŞ','Din','Yemek','Eğlence'].map(t => `
+              <button class="pill ${state.selectedTag===t?'accent':''}" onclick="state.selectedTag='${t}'; closeSheet(); render()">${t}</button>
+            `).join('')}
+          </div>
+        `;
+      } else if (type === 'deep') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div><h3>Derin Odaklanma Modu</h3>
+          <div class="card row-between"><span>Yeni oturum başladığında uygulamayı aç</span><strong>Açık</strong></div>
+          <div class="card row-between"><span>Duraklatmayı devre dışı bırak</span><strong>Aktif</strong></div>
+          <div class="card row-between"><span>Beyaz Gürültü</span><strong>Yağmur Sesi</strong></div>
+          <button class="pill accent" style="justify-content:center; padding:12px;" onclick="closeSheet()">Kapat</button>
+        `;
+      } else if (type === 'goal') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div><h3>Bugünün Çalışma Hedefi</h3>
+          <div style="display:flex; gap:10px; justify-content:center;">
+            ${[4,6,8,10].map(h => `<button class="pill ${state.studyGoalH===h?'accent':''}" onclick="state.studyGoalH=${h}; closeSheet(); render()">${h} Saat</button>`).join('')}
+          </div>
+        `;
+      } else if (type === 'johari') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div><h3>Johari Penceresi · Kör Alan Dönüşümü</h3>
+          <p class="muted">Parlat Bölüm 2: Güvendiğin kişilerden gelen geri bildirimler Kör Alanı küçültüp Açık Alana taşır.</p>
+          <div class="card"><strong>Kör Alan #1:</strong> 15:00 sonrası bildirim bölünmesi → <em>Çözüm: Derin Odak Otomasyonu</em></div>
+          <div class="card"><strong>Kör Alan #2:</strong> Toplantı öncesi hazırlık notları eksik → <em>Çözüm: 10 dk Durum-Veri şablonu</em></div>
+          <button class="pill accent" style="justify-content:center; padding:12px;" onclick="closeSheet()">Açık Alana Taşı</button>
+        `;
+      } else if (type === 'aiPerms') {
+        sc.innerHTML = `
+          <div class="sheet-handle"></div>
+          <h3>Yetki Seviyesi & İzin Matrisi</h3>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            ${['Salt Okunur','Düzenleme','Tam Kontrol','Özel İzinler'].map(t => `
+              <button class="pill ${state.selectedTier===t?'accent':''}" onclick="state.selectedTier='${t}'; openSheet('aiPerms')">${t}</button>
+            `).join('')}
+          </div>
+          <div class="card" style="font-size:12px; display:flex; flex-direction:column; gap:6px;">
+            <div class="row-between"><span>Profil / İstatistikler</span><strong>Okuma</strong></div>
+            <div class="row-between"><span>Hedefler & Alışkanlıklar</span><strong>Okuma / Yazma</strong></div>
+            <div class="row-between"><span>Takvim & Günlük Planlar</span><strong>Okuma / Yazma</strong></div>
+            <div class="row-between"><span>Otomasyonlar & Hatırlatıcılar</span><strong>Oluşturma / Yönetme</strong></div>
+            <div class="row-between"><span>AI Hafıza (4 Sütun)</span><strong>Okuma / Güncelleme</strong></div>
+          </div>
+          <div class="card" style="font-size:11px;">
+            <div class="micro" style="color:var(--accent);">BAĞLANTI ENDPOINTLERİ</div>
+            <div class="muted" style="margin-top:4px;">MCP: https://api.parlat.app/mcp<br/>OpenAPI: https://api.parlat.app/v1/openapi.json</div>
+          </div>
+          <button class="pill accent" style="justify-content:center; padding:12px;" onclick="closeSheet()">Yetkileri Kaydet</button>
+        `;
+      }
+      bd.classList.add('open');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheetBackdrop').classList.remove('open');
+    }
+
+    // Populate Figma-exported screens board
+    const figmaBoards = [
+      ['00 · Tasarım Sistemi Bileşenleri', '00_components.png', 'BottomNav, LiquidGlassFolder ve AIConnectionRow bileşenleri'],
+      ['01 · Odak, Zamanlayıcı & Türkçe Sesli Dikte', '01_odak_ve_dikte.png', 'Engross zamanlayıcı, kurulum sheet ve sesli komut niyet ayrıştırma'],
+      ['02 · Akıllı Planlama & Parlat Johari', '02_planlama_johari.png', 'Üst Etkinlik/Görev, Google Takvim senkron, Johari 2x2 ve alt hafta şeridi'],
+      ['03 · Hedefler (Liquid Glass Vadeler)', '03_hedefler_liquid_glass.png', 'Kısa/Orta/Uzun Vade klasörleri ve alt geri dönüş peek çubuğu'],
+      ['04 · İstatistikler & Canlı Telemetri', '04_istatistik_canli_analiz.png', 'Alt tarih seçici, Denge Karnesi ve Kırmızı-Mavi-Yeşil canlı odak dalgası'],
+      ['05 · Ayarlar & AI Bağlantı Merkezi', '05_ayarlar_ai_merkezi.png', 'API Key, ChatGPT/Claude/Gemini bağlayıcılar, izin matrisi ve onay merkezi'],
+      ['06 · Açık Tema (Beyaz · Gri · Mavi)', '06_light_theme_showcase.png', 'Kullanıcı seçilebilir Açık Tema ekran varyantları'],
+      ['07 · Parlat! 40 Metot Mimari Haritası', '07_parlat_felsefe_haritasi.png', 'Kitaptaki 40 metodun 7 modül ve AI motorlarına dağılımı']
+    ];
+    document.getElementById('boardGrid').innerHTML = figmaBoards.map(([t, file, desc]) => `
+      <div class="artboard">
+        <div><strong style="font-size:14px;">${t}</strong><div class="muted">${desc}</div></div>
+        <img src="../figma_screens/${file}" alt="${t}" loading="lazy"/>
+      </div>
+    `).join('');
+
+    render();
+  </script>
+</body>
+</html>

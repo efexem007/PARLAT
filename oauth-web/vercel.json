@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/authorize", "destination": "/index.html" }
+  ]
+}

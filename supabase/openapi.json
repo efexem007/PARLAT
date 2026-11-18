@@ -1,0 +1,501 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Parlat Focus AI Gateway API",
+    "version": "1.0.0",
+    "description": "Scoped REST API & Custom GPT Action schema for Parlat Focus. Every request requires a user-scoped Bearer AI Connection token enforced server-side against 4 authorization tiers, 10 granular resource scopes, and the Action Approval Center."
+  },
+  "servers": [
+    {
+      "url": "https://mqgskhpqopxwjojnqbyn.supabase.co/functions/v1/ai-gateway",
+      "description": "Parlat Focus Live AI Gateway (Supabase Edge Function)"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Scoped Parlat Focus AI connection token (SHA-256 hashed at rest; never use service_role keys)."
+      }
+    },
+    "schemas": {
+      "GatewayResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["executed", "pending_approval", "blocked", "denied"]
+          },
+          "tool": { "type": "string" },
+          "message": { "type": "string" },
+          "data": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "GoalCreateRequest": {
+        "type": "object",
+        "required": ["title", "horizon"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "horizon": { "type": "string", "enum": ["short", "mid", "long"] },
+          "quadrant": { "type": "string", "enum": ["q1", "q2", "q3", "q4"] },
+          "category": { "type": "string" },
+          "is_bhag": { "type": "boolean" }
+        }
+      },
+      "GoalUpdateRequest": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "progress": { "type": "number", "minimum": 0, "maximum": 1 },
+          "horizon": { "type": "string", "enum": ["short", "mid", "long"] },
+          "quadrant": { "type": "string", "enum": ["q1", "q2", "q3", "q4"] }
+        }
+      },
+      "PlanUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "plan_date": { "type": "string", "format": "date" },
+          "title": { "type": "string" },
+          "start_at": { "type": "string", "format": "date-time" },
+          "end_at": { "type": "string", "format": "date-time" },
+          "category": { "type": "string" },
+          "ai_adjusted": { "type": "boolean" }
+        }
+      },
+      "HabitCreateRequest": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "time_of_day": { "type": "string" },
+          "target_minutes": { "type": "integer", "minimum": 1 },
+          "tag": { "type": "string" }
+        }
+      },
+      "HabitUpdateRequest": {
+        "type": "object",
+        "required": ["habit_id"],
+        "properties": {
+          "habit_id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string", "enum": ["pending", "completed", "postponed", "skipped"] },
+          "target_minutes": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "JournalCreateRequest": {
+        "type": "object",
+        "required": ["formatted_text"],
+        "properties": {
+          "raw_transcript": { "type": "string" },
+          "formatted_text": { "type": "string" },
+          "mood": { "type": "string" }
+        }
+      },
+      "ReminderCreateRequest": {
+        "type": "object",
+        "required": ["title", "remind_at"],
+        "properties": {
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "remind_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AutomationManageRequest": {
+        "type": "object",
+        "required": ["name", "trigger_event", "action_type"],
+        "properties": {
+          "name": { "type": "string" },
+          "trigger_event": {
+            "type": "string",
+            "enum": [
+              "goal_created",
+              "goal_deadline_approaching",
+              "habit_missed",
+              "weekly_review_time",
+              "plan_modified",
+              "prolonged_lack_of_progress"
+            ]
+          },
+          "action_type": { "type": "string" },
+          "is_enabled": { "type": "boolean" }
+        }
+      },
+      "MemoryUpdateRequest": {
+        "type": "object",
+        "required": ["pillar", "memory_key", "summary"],
+        "properties": {
+          "pillar": {
+            "type": "string",
+            "enum": ["user_profile", "goal_history", "progress_history", "conversation_context"]
+          },
+          "memory_key": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/overview": {
+      "get": {
+        "operationId": "get_app_overview",
+        "summary": "Introduce Parlat Focus architecture, methodology, and active modules.",
+        "responses": {
+          "200": { "description": "App overview", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GatewayResponse" } } } },
+          "401": { "description": "Invalid, expired, or revoked AI token" }
+        }
+      }
+    },
+    "/v1/features": {
+      "get": {
+        "operationId": "get_app_features",
+        "summary": "Discover enabled features and tool catalog scoped to the current connection.",
+        "responses": {
+          "200": { "description": "Feature & tool catalog" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/v1/state": {
+      "get": {
+        "operationId": "get_full_app_state",
+        "summary": "Read snapshot across permitted modules (profile, goals, habits, plan items).",
+        "responses": {
+          "200": { "description": "Permitted app state snapshot" },
+          "403": { "description": "Missing profile:read scope" }
+        }
+      }
+    },
+    "/v1/profile": {
+      "get": {
+        "operationId": "get_user_profile",
+        "summary": "Fetch authenticated user's profile, theme, focus settings, and daily goal hours.",
+        "responses": {
+          "200": { "description": "User profile" },
+          "403": { "description": "Forbidden" }
+        }
+      },
+      "patch": {
+        "operationId": "update_user_profile",
+        "summary": "Update theme mode, daily goal hours, focus timer config, or white noise.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "theme_mode": { "type": "string", "enum": ["dark", "light"] },
+                  "daily_goal_hours": { "type": "number" },
+                  "work_minutes": { "type": "integer" },
+                  "break_minutes": { "type": "integer" },
+                  "white_noise": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated" },
+          "202": { "description": "Queued in Action Approval Center" },
+          "403": { "description": "Denied or blocked by policy" }
+        }
+      }
+    },
+    "/v1/goals": {
+      "get": {
+        "operationId": "get_goals",
+        "summary": "List short, medium, and long-term goals and sub-tasks.",
+        "parameters": [
+          {
+            "name": "horizon",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["short", "mid", "long"] }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Goals and sub-tasks" },
+          "403": { "description": "Missing goals:read scope" }
+        }
+      },
+      "post": {
+        "operationId": "create_goal",
+        "summary": "Create a new Short/Mid/Long goal with Eisenhower quadrant.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalCreateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Created" },
+          "202": { "description": "Pending user approval" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "patch": {
+        "operationId": "update_goal",
+        "summary": "Update an existing goal's progress, horizon, or quadrant.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GoalUpdateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Updated" },
+          "202": { "description": "Pending user approval" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "delete": {
+        "operationId": "delete_goal",
+        "summary": "Delete a goal (sensitive operation governed by delete scope and Approval Center).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Deleted" },
+          "202": { "description": "Pending user approval" },
+          "403": { "description": "Denied or blocked" }
+        }
+      }
+    },
+    "/v1/daily-plan": {
+      "get": {
+        "operationId": "get_daily_plan",
+        "summary": "Fetch daily plan items and calendar time blocks.",
+        "parameters": [
+          { "name": "date", "in": "query", "required": false, "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Daily plan blocks" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "patch": {
+        "operationId": "update_daily_plan",
+        "summary": "Modify, lighten, or add time blocks to the daily plan.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PlanUpdateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Plan updated" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/focus": {
+      "post": {
+        "operationId": "control_focus_timer",
+        "summary": "Start, pause, reset, or configure the focus timer.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["start", "pause", "reset", "configure"] },
+                  "work_minutes": { "type": "integer" },
+                  "tag": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Timer action acknowledged" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/calendar/sync": {
+      "post": {
+        "operationId": "sync_calendar",
+        "summary": "Trigger two-way Google Calendar synchronization.",
+        "responses": {
+          "200": { "description": "Calendar synced" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/habits": {
+      "get": {
+        "operationId": "get_habits",
+        "summary": "List daily habits and current streaks.",
+        "responses": {
+          "200": { "description": "Habits list" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "post": {
+        "operationId": "create_habit",
+        "summary": "Create a new habit.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HabitCreateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Habit created" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "patch": {
+        "operationId": "update_habit",
+        "summary": "Update habit daily status or target minutes.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HabitUpdateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Habit updated" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "delete": {
+        "operationId": "delete_habit",
+        "summary": "Delete a habit (sensitive operation).",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "Habit deleted" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/analytics": {
+      "get": {
+        "operationId": "get_progress",
+        "summary": "Fetch progress analytics, deviations, and balance scores.",
+        "responses": {
+          "200": { "description": "Progress analytics" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/journal": {
+      "post": {
+        "operationId": "create_journal",
+        "summary": "Create a Turkish text or voice journal entry.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JournalCreateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Journal entry created" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/reminders": {
+      "post": {
+        "operationId": "create_reminder",
+        "summary": "Create a scheduled reminder.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReminderCreateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Reminder created" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/automations": {
+      "post": {
+        "operationId": "manage_automation",
+        "summary": "Create or toggle event-driven automation rules.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AutomationManageRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Automation saved" },
+          "202": { "description": "Pending approval" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/memory": {
+      "get": {
+        "operationId": "get_ai_memory",
+        "summary": "Read approved 4-pillar AI Memory Engine entries.",
+        "responses": {
+          "200": { "description": "AI memory entries" },
+          "403": { "description": "Denied" }
+        }
+      },
+      "post": {
+        "operationId": "update_ai_memory",
+        "summary": "Persist an explicitly approved preference or high-signal insight into AI memory.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MemoryUpdateRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Memory persisted" },
+          "202": { "description": "Pending user approval" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/v1/activity-history": {
+      "get": {
+        "operationId": "get_activity_history",
+        "summary": "Inspect AI connection audit trail (ai_action_logs).",
+        "responses": {
+          "200": { "description": "AI audit log history" },
+          "403": { "description": "Denied" }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "operationId": "mcp_json_rpc",
+        "summary": "MCP (Model Context Protocol) JSON-RPC 2.0 endpoint supporting initialize, tools/list, and tools/call.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["jsonrpc", "method"],
+                "properties": {
+                  "jsonrpc": { "type": "string", "const": "2.0" },
+                  "id": { "type": ["string", "integer", "null"] },
+                  "method": { "type": "string", "enum": ["initialize", "tools/list", "tools/call"] },
+                  "params": { "type": "object", "additionalProperties": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "JSON-RPC 2.0 response" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Denied or blocked" }
+        }
+      }
+    }
+  }
+}
